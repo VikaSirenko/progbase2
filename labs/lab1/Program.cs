@@ -16,6 +16,8 @@ class Program
     }
     static void Main(string[] args)
     {
+        Stopwatch st = new Stopwatch();
+        st.Start();
 
         FileDescription inputFile = ParseFile(args);
 
@@ -84,10 +86,13 @@ class Program
         ListPost mixList = DeleteIdenticalIdentifiers(list1, list2);
         mixList = RemoveAllLargerVal(mixList);
         WriteAllPosts(path3, mixList);
-        ForegroundColor= ConsoleColor.Green;
+        ForegroundColor = ConsoleColor.Green;
         WriteLine();
         WriteLine("OK.");
         ResetColor();
+
+        st.Stop();
+        WriteLine(st.Elapsed);
 
 
     }
@@ -100,28 +105,35 @@ class Program
             error = ""
         };
 
-        bool n = int.TryParse(args[1], out descriptions.number_of_lines);
+
 
 
         if (args.Length != 2)
         {
-            descriptions.error = $"the number of arguments must be-2 , but you have {args.Length} ";
+            descriptions.error = $"the number of arguments must be-2 , but you have - {args.Length} ";
             return descriptions;
         }
 
-        else if (n && descriptions.number_of_lines > 0)
-        {
 
-            descriptions.path = args[0];
-
-        }
 
         else
         {
-            descriptions.error = $"{nameof(descriptions.number_of_lines)} entered incorrectly";
-            return descriptions;
+            bool n = int.TryParse(args[1], out descriptions.number_of_lines);
+            if (n && descriptions.number_of_lines > 0)
+            {
+                descriptions.path = args[0];
+
+            }
+            else
+            {
+                descriptions.error = $"{nameof(descriptions.number_of_lines)} entered incorrectly";
+                return descriptions;
+
+            }
 
         }
+
+
 
         return descriptions;
     }
@@ -302,7 +314,7 @@ class Program
         ForegroundColor = ConsoleColor.Green;
         WriteLine($"List size: {list.Size}");
         ResetColor();
-        Post[] posts= list.Posts;
+        Post[] posts = list.Posts;
         for (int i = 0; i < 10; i++)
         {
             WriteLine(posts[i]);
@@ -372,7 +384,7 @@ class Program
 
         int result = sum / list.Size;
         WriteLine("Arithmetic value of likes:");
-        ForegroundColor=ConsoleColor.Yellow;
+        ForegroundColor = ConsoleColor.Yellow;
         WriteLine(result);
         ResetColor();
         return result;
