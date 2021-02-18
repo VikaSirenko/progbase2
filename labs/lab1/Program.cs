@@ -155,7 +155,8 @@ class Program
             {
                 if (j == 0)
                 {
-                    id = random.Next(1, rows);
+                    id+=1;
+                    //id = random.Next(1, rows);
                     csvTable[i, j] = id.ToString();
                 }
 
@@ -330,7 +331,7 @@ class Program
     static ListPost DeleteIdenticalIdentifiers(ListPost list1, ListPost list2)
     {
         ListPost mixList = new ListPost();
-        bool[] usedId = new bool[Math.Max(list1.Size, list2.Size)];
+        bool[] usedId = new bool[Math.Max(list1.Size, list2.Size)+1];
         int count = 0;
         for (int i = 0; i < list1.Size; i++)
         {
