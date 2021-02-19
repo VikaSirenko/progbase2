@@ -155,7 +155,7 @@ class Program
             {
                 if (j == 0)
                 {
-                    id+=1;
+                    id += 1;
                     //id = random.Next(1, rows);
                     csvTable[i, j] = id.ToString();
                 }
@@ -218,6 +218,27 @@ class Program
         {
             search_line = finder.ReadLine();
             number_user_name--;
+            for (int i = 0; i < search_line.Length; i++)
+            {
+                char item = search_line[i];
+                if (item == '"')
+                {
+                    ForegroundColor = ConsoleColor.Red;
+                    WriteLine("Error: the text contains quotation marks");
+                    ResetColor();
+                    Environment.Exit(1);
+
+                }
+                else if (item == ',')
+                {
+                    ForegroundColor = ConsoleColor.Red;
+                    WriteLine("Error:the text contains a comma");
+                    ResetColor();
+                    Environment.Exit(1);
+
+                }
+
+            }
         }
 
         finder.Close();
@@ -331,7 +352,7 @@ class Program
     static ListPost DeleteIdenticalIdentifiers(ListPost list1, ListPost list2)
     {
         ListPost mixList = new ListPost();
-        bool[] usedId = new bool[Math.Max(list1.Size, list2.Size)+1];
+        bool[] usedId = new bool[Math.Max(list1.Size, list2.Size) + 1];
         int count = 0;
         for (int i = 0; i < list1.Size; i++)
         {
