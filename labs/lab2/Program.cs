@@ -18,7 +18,7 @@ class Program
         bool do_command = true;
         while (do_command)
         {
-            if (state == ConnectionState.Open)
+            try
             {
                 WriteLine($"\nWrite command:");
                 string command = ReadLine();
@@ -48,17 +48,14 @@ class Program
                         do_command = false;
                         break;
                     default:
-                        Exception exception = new PlatformNotSupportedException($"Command [{command}] not found");
-                        WriteLine(exception);
+                        WriteLine($"Command [{command}] not found");
                         break;
                 }
             }
 
-            else
+            catch
             {
                 WriteLine("Error connecting to data base");
-                do_command = false;
-
             }
         }
 
@@ -73,8 +70,7 @@ class Program
     {
         if (subcommand.Length != 2)
         {
-            Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
-            WriteLine(exception);
+            WriteLine($"There should be [2] parts, but you have [{subcommand.Length}]");
         }
 
         else
@@ -98,8 +94,7 @@ class Program
 
             else
             {
-                Exception ex = new FormatException($"The value of [{nameof(id)}]  cannot be parsed");
-                WriteLine(ex);
+                WriteLine($"The value of [{nameof(id)}]  cannot be parsed");
             }
 
         }
@@ -113,8 +108,7 @@ class Program
 
         if (subcommand.Length != 2)
         {
-            Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
-            WriteLine(exception);
+            WriteLine($"There should be [2] parts, but you have [{subcommand.Length}]");
         }
 
         else
@@ -133,13 +127,12 @@ class Program
                 {
                     WriteLine($"Post with id:[{id}] deleted\nQuantity of deleted posts:[{nChanges}]");
                 }
-                
+
             }
 
             else
             {
-                Exception ex = new FormatException($"The value of [{nameof(id)}]  cannot be parsed");
-                WriteLine(ex);
+                WriteLine($"The value of [{nameof(id)}]  cannot be parsed");
             }
 
         }
@@ -152,8 +145,8 @@ class Program
     {
         if (subcommand.Length != 2)
         {
-            Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
-            WriteLine(exception);
+            WriteLine($"There should be [2] parts, but you have [{subcommand.Length}]");
+
         }
 
         else
@@ -162,7 +155,7 @@ class Program
 
             if (partOfPostData.Length != 3)
             {
-                WriteLine("Data for new post entered incorrectly");
+                WriteLine($"Data for new post entered incorrectly: there should be [3] parts, but you have [{partOfPostData.Length}] ");
 
             }
 
@@ -172,9 +165,7 @@ class Program
                 bool isLikes = int.TryParse(partOfPostData[2], out likes);
                 if (isLikes == false || likes < 0)
                 {
-                    Exception ex = new FormatException($"The value of {nameof(likes)}  cannot be parsed");
-                    WriteLine(ex);
-
+                    WriteLine($"The value of {nameof(likes)}  cannot be parsed");
                 }
 
                 else
@@ -198,8 +189,8 @@ class Program
     {
         if (subcommand.Length != 1)
         {
-            Exception exception = new ArgumentOutOfRangeException($"There should be 1 part, but you have [{subcommand.Length}]");
-            WriteLine(exception);
+            WriteLine($"There should be [1] part, but you have [{subcommand.Length}]");
+
         }
 
         else
@@ -217,25 +208,24 @@ class Program
     {
         if (subcommand.Length != 2)
         {
-            Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
-            WriteLine(exception);
+            WriteLine($"There should be [2] parts, but you have [{subcommand.Length}]");
+
         }
 
         else
         {
             int pageNumber;
             bool isPageNumber = int.TryParse(subcommand[1], out pageNumber);
-            if (pageNumber > 0 && isPageNumber == true && pageNumber < repository.GetTotalPages())
+            if (pageNumber > 0 && isPageNumber == true &&  pageNumber <= repository.GetTotalPages())
             {
-                ListPost list = repository.GetPage(pageNumber);
-                Post[] posts = list.GetPosts();
+                ListPost posts = repository.GetPage(pageNumber);
+
                 WriteLine();
 
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < posts.GetSize(); i++)
                 {
-                    WriteLine(posts[i]);
+                    WriteLine(posts.GetAt(i));
                     WriteLine();
-
                 }
 
                 WriteLine();
@@ -243,8 +233,7 @@ class Program
 
             else
             {
-                Exception ex = new FormatException($"The value of [{nameof(pageNumber)}]  cannot be parsed or this page does not exist");
-                WriteLine(ex);
+                WriteLine($"The value of [{nameof(pageNumber)}]  cannot be parsed or this page does not exist");
             }
 
         }
@@ -256,8 +245,7 @@ class Program
     {
         if (subcommand.Length != 2)
         {
-            Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
-            WriteLine(exception);
+            WriteLine($"There should be [2] parts, but you have [{subcommand.Length}]");
         }
 
         else
@@ -281,7 +269,7 @@ class Program
 
         for (int i = 0; i < posts.GetSize(); i++)
         {
-            string line = $"{posts.GetPosts()[i].id}, {posts.GetPosts()[i].username}, {posts.GetPosts()[i].status}, {posts.GetPosts()[i].likes} ";
+            string line = $"{posts.GetAt(i).id}, {posts.GetAt(i).username}, {posts.GetAt(i).status}, {posts.GetAt(i).likes}";
             writer.WriteLine(line);
             line = "";
         }
@@ -410,10 +398,11 @@ class PostRepository
 
 
         }
+
         catch (FormatException ex)
         {
-            ex = new FormatException($"The values cannot be parsed");
-            WriteLine(ex);
+
+            WriteLine($"{ex}: The values cannot be parsed");
 
         }
         return post;
@@ -480,11 +469,19 @@ class ListPost
         return _size;
     }
 
-    public Post[] GetPosts()
+    public Post GetAt(int index)
     {
-        return _posts;
-    }
+        if (index < 0 || index > this._size)
+        {
+            throw new ArgumentException($"{nameof(index)} is incorrect");
+        }
 
+        else
+        {
+            return _posts[index];
+        }
+
+    }
 
     public ListPost()
     {
