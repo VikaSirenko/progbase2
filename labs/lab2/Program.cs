@@ -23,6 +23,7 @@ class Program
                 WriteLine($"\nWrite command:");
                 string command = ReadLine();
                 string[] subcommand = command.Split(' ');
+
                 switch (subcommand[0])
                 {
                     case "getById":
@@ -52,6 +53,7 @@ class Program
                         break;
                 }
             }
+
             else
             {
                 WriteLine("Error connecting to data base");
@@ -59,9 +61,11 @@ class Program
 
             }
         }
+
         connection.Close();
 
     }
+
 
 
 
@@ -72,6 +76,7 @@ class Program
             Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
             WriteLine(exception);
         }
+
         else
         {
 
@@ -84,14 +89,16 @@ class Program
                 {
                     WriteLine($"Post with id:[{id}] NOT found");
                 }
+
                 else
                 {
                     WriteLine(post);
                 }
             }
+
             else
             {
-                Exception ex = new FormatException($"The value of {nameof(id)}  cannot be parsed");
+                Exception ex = new FormatException($"The value of [{nameof(id)}]  cannot be parsed");
                 WriteLine(ex);
             }
 
@@ -100,46 +107,42 @@ class Program
     }
 
 
+
     static void ProcessDeleteByID(string[] subcommand, PostRepository repository)
     {
+
         if (subcommand.Length != 2)
         {
             Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
             WriteLine(exception);
         }
+
         else
         {
-            if (subcommand.Length != 2)
+            int id;
+            bool isId = int.TryParse(subcommand[1], out id);
+            if (id >= 0 && isId == true)
             {
-                Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
-                WriteLine(exception);
-            }
-            else
-            {
-                int id;
-                bool isId = int.TryParse(subcommand[1], out id);
-                if (id >= 0 && isId == true)
+                int nChanges = repository.DeleteById(id);
+                if (nChanges == 0)
                 {
-                    int nChanges = repository.DeleteById(id);
-                    if (nChanges == 0)
-                    {
-                        WriteLine($"Post with id: [{id}] NOT deleted");
-                    }
-                    else
-                    {
-                        WriteLine($"Post with id:[{id}] deleted\nNumber of deleted posts:[{nChanges}]");
-                    }
-                }
-                else
-                {
-                    Exception ex = new FormatException($"The value of {nameof(id)}  cannot be parsed");
-                    WriteLine(ex);
+                    WriteLine($"Post with id: [{id}] NOT deleted");
                 }
 
+                else
+                {
+                    WriteLine($"Post with id:[{id}] deleted\nQuantity of deleted posts:[{nChanges}]");
+                }
+                
+            }
+
+            else
+            {
+                Exception ex = new FormatException($"The value of [{nameof(id)}]  cannot be parsed");
+                WriteLine(ex);
             }
 
         }
-
 
     }
 
@@ -152,6 +155,7 @@ class Program
             Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
             WriteLine(exception);
         }
+
         else
         {
             string[] partOfPostData = subcommand[1].Split(",");
@@ -161,6 +165,7 @@ class Program
                 WriteLine("Data for new post entered incorrectly");
 
             }
+
             else
             {
                 int likes;
@@ -171,6 +176,7 @@ class Program
                     WriteLine(ex);
 
                 }
+
                 else
                 {
                     Post post = new Post();
@@ -195,6 +201,7 @@ class Program
             Exception exception = new ArgumentOutOfRangeException($"There should be 1 part, but you have [{subcommand.Length}]");
             WriteLine(exception);
         }
+
         else
         {
             long numberOfPages = repository.GetTotalPages();
@@ -213,8 +220,32 @@ class Program
             Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
             WriteLine(exception);
         }
+
         else
         {
+            int pageNumber;
+            bool isPageNumber = int.TryParse(subcommand[1], out pageNumber);
+            if (pageNumber > 0 && isPageNumber == true && pageNumber < repository.GetTotalPages())
+            {
+                ListPost list = repository.GetPage(pageNumber);
+                Post[] posts = list.GetPosts();
+                WriteLine();
+
+                for (int i = 0; i < 10; i++)
+                {
+                    WriteLine(posts[i]);
+                    WriteLine();
+
+                }
+
+                WriteLine();
+            }
+
+            else
+            {
+                Exception ex = new FormatException($"The value of [{nameof(pageNumber)}]  cannot be parsed or this page does not exist");
+                WriteLine(ex);
+            }
 
         }
 
@@ -228,12 +259,37 @@ class Program
             Exception exception = new ArgumentOutOfRangeException($"There should be 2 parts, but you have [{subcommand.Length}]");
             WriteLine(exception);
         }
+
         else
         {
+            string path = "./export.csv";
+            string valueX = subcommand[1];
+            ListPost posts = repository.GetExport(valueX);
+            long numberOfRows = posts.GetSize();
+            WritePostsInFile(path, posts);
+            WriteLine($"Saved in: [{path}]");
+            WriteLine($"Number of exported rows: {numberOfRows}");
 
         }
 
     }
+
+
+    static void WritePostsInFile(string filePath, ListPost posts)
+    {
+        StreamWriter writer = new StreamWriter(filePath);
+
+        for (int i = 0; i < posts.GetSize(); i++)
+        {
+            string line = $"{posts.GetPosts()[i].id}, {posts.GetPosts()[i].username}, {posts.GetPosts()[i].status}, {posts.GetPosts()[i].likes} ";
+            writer.WriteLine(line);
+            line = "";
+        }
+
+        writer.Close();
+
+    }
+
 }
 
 
@@ -253,31 +309,30 @@ class PostRepository
         command.CommandText = @"SELECT * FROM posts WHERE id =$id";
         command.Parameters.AddWithValue("$id", id);
         SqliteDataReader reader = command.ExecuteReader();
+
         if (reader.Read())
         {
-            Post post = GetPost(reader);
+            Post post = GetOnePost(reader);
             reader.Close();
             return post;
 
         }
+
         else
         {
             reader.Close();
             return null;
 
         }
-
-
     }
+
 
     public int DeleteById(int id)
     {
         SqliteCommand command = connection.CreateCommand();
         command.CommandText = @"DELETE FROM posts WHERE id =$id";
         command.Parameters.AddWithValue("$id", id);
-        SqliteDataReader reader = command.ExecuteReader();
-        reader.Close();
-        int nChanges = command.ExecuteNonQuery();  //??? dont work
+        int nChanges = command.ExecuteNonQuery();
         return nChanges;
 
     }
@@ -291,18 +346,13 @@ class PostRepository
         VALUES ($userName, $status, $likes);
         SELECT last_insert_rowid();
         ";
-        if (post.username == null || post.status == null || post.likes.ToString() == null)
-        {
-            return -1;
-        }
-        else
-        {
-            command.Parameters.AddWithValue("$userName", post.username);
-            command.Parameters.AddWithValue("$status", post.status);
-            command.Parameters.AddWithValue("likes", post.likes);
-            long newID = (long)command.ExecuteScalar();
-            return newID;
-        }
+
+        command.Parameters.AddWithValue("$userName", post.username);
+        command.Parameters.AddWithValue("$status", post.status);
+        command.Parameters.AddWithValue("likes", post.likes);
+        long newID = (long)command.ExecuteScalar();
+        return newID;
+
 
     }
 
@@ -323,32 +373,36 @@ class PostRepository
 
     public ListPost GetPage(int pageNumber)
     {
-        throw new NotImplementedException();
+        const int pageSize = 10;
+        SqliteCommand command = connection.CreateCommand();
+        command.CommandText = @"SELECT * FROM posts LIMIT $pageSize OFFSET $pageSize *($pageNumber -1 ) ";
+        command.Parameters.AddWithValue("$pageSize", pageSize);
+        command.Parameters.AddWithValue("$pageNumber", pageNumber);
+        ListPost posts = ReadPostsFromCommand(command);
+        return posts;
+
 
     }
 
     public ListPost GetExport(string valueX)
     {
-        throw new NotImplementedException();
 
-        /*
         SqliteCommand command = this.connection.CreateCommand();
-        command.CommandText = @"SELECT FROM * posts ";
-        SqliteDataReader reader = command.ExecuteReader();
-        ListPost posts = ReadPosts(reader);
-        reader.Close();
+        command.CommandText = @"SELECT  * FROM  posts WHERE status LIKE '%' || $valueX || '%'";
+        command.Parameters.AddWithValue("$valueX", valueX);
+        ListPost posts = ReadPostsFromCommand(command);
         return posts;
-        */
+
 
     }
 
-    static Post GetPost(SqliteDataReader reader)
+    static Post GetOnePost(SqliteDataReader reader)
     {
 
         Post post = new Post();
         try
         {
-            
+
             post.id = int.Parse(reader.GetString(0));
             post.username = reader.GetString(1);
             post.status = reader.GetString(2);
@@ -358,7 +412,7 @@ class PostRepository
         }
         catch (FormatException ex)
         {
-            ex = new FormatException($"The value of {nameof(post.id)} or {nameof(post.likes)} cannot be parsed");
+            ex = new FormatException($"The values cannot be parsed");
             WriteLine(ex);
 
         }
@@ -366,15 +420,16 @@ class PostRepository
 
     }
 
-    static ListPost ReadPosts(SqliteDataReader reader)
+    static ListPost ReadPostsFromCommand(SqliteCommand command)
     {
+        SqliteDataReader reader = command.ExecuteReader();
         ListPost posts = new ListPost();
-
         while (reader.Read())
         {
-            Post post = GetPost(reader);
+            Post post = GetOnePost(reader);
             posts.Add(post);
         }
+        reader.Close();
         return posts;
     }
 
@@ -419,7 +474,7 @@ class ListPost
 {
     private Post[] _posts;
     private int _size;
-    /*
+
     public int GetSize()
     {
         return _size;
@@ -429,22 +484,7 @@ class ListPost
     {
         return _posts;
     }
-    
 
-
-    public Post ReturnPostByIndex(int index)
-    {
-        if (index >= 0 || index < _size)
-        {
-
-            return _posts[index];
-        }
-        else
-        {
-            throw new ArgumentException($"{nameof(index)} is incorrect");
-        }
-    }
-    */
 
     public ListPost()
     {
@@ -470,25 +510,7 @@ class ListPost
         Array.Copy(oldArray, this._posts, oldCapacity);
 
     }
-    /*
-    public void RemoveAt(int index)
-    {
-        if (index < 0 || index > this._size)
-        {
-            throw new ArgumentException($"{nameof(index)} is incorrect");
-        }
 
-        else
-        {
-            for (int i = index; i < this._size; i++)
-            {
-                _posts[i] = _posts[i + 1];
-            }
-            _size = _size - 1;
-
-        }
-    }
-    */
 
 }
 
