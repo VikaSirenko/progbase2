@@ -8,8 +8,9 @@ namespace lab5
     public static class CommandProcessor
     {
 
-        public static void Run(DataProcessor processor)
+        public static void Run()
         {
+            DataProcessor processor = new DataProcessor();
             bool run = true;
             while (run)
             {
@@ -17,7 +18,16 @@ namespace lab5
                 WriteLine("Enter the command");
                 string inputCommand = ReadLine();
                 string[] userCommand = inputCommand.Split(" ");
-                run = ParseCommandLine(userCommand, processor);
+                try
+                {
+                    run = ParseCommandLine(userCommand, processor);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(ex.Message);
+
+                }
             }
 
         }
