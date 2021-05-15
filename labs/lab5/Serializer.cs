@@ -25,13 +25,13 @@ namespace lab5
 
         }
 
-        public static Root DoDeserialization(string inputFile)
+        public static List<Customer> DoDeserialization(string inputFile)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(Root));
             StreamReader reader = new StreamReader(inputFile);
-            Root customers = (Root)serializer.Deserialize(reader);
+            Root root = (Root)serializer.Deserialize(reader);
             reader.Close();
-            return customers;
+            return root.customers;
         }
 
 

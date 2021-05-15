@@ -4,7 +4,7 @@ using System;
 
 namespace lab5
 {
-    public class Image
+    public static class Image
     {
         
         public struct MarketSegmentation
@@ -17,7 +17,7 @@ namespace lab5
 
         }
 
-        public MarketSegmentation CountCustomersInCategory(List<Customer> customers)
+        public static  MarketSegmentation CountCustomersInCategory(List<Customer> customers)
         {
             MarketSegmentation segmentation = new MarketSegmentation();
             for (int i = 0; i < customers.Count; i++)
@@ -47,7 +47,7 @@ namespace lab5
 
         }
 
-        public ScottPlot.Plot FormBarGraph(MarketSegmentation segmentation)
+        public static ScottPlot.Plot FormBarGraph(MarketSegmentation segmentation)
         {
             ScottPlot.Plot plt = new ScottPlot.Plot(600, 400);
             string[] labels = {"household", "automobile", "building", "machinery", "furniture"};

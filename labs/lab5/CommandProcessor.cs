@@ -10,8 +10,8 @@ namespace lab5
 
         public static void Run()
         {
-            DataProcessor processor = new DataProcessor();
             bool run = true;
+            List<Customer> customers = new List<Customer>();
             while (run)
             {
                 WriteLine();
@@ -20,7 +20,38 @@ namespace lab5
                 string[] userCommand = inputCommand.Split(" ");
                 try
                 {
-                    run = ParseCommandLine(userCommand, processor);
+                    ValidateCommand(userCommand[0]);
+                    switch (userCommand[0])
+                    {
+                        case "load":
+                            customers = ProcessLoad(userCommand);
+                            break;
+                        case "print":
+                            ProcessPrint(userCommand, customers);
+                            break;
+                        case "save":
+                            ProcessSave(userCommand, customers);
+                            break;
+                        case "export":
+                            ProcessExport(userCommand, customers);
+                            break;
+                        case "image":
+                            ProcessImage(userCommand, customers);
+                            break;
+                        case "balances":
+                            ProcessBalances(userCommand, customers);
+                            break;
+                        case "names":
+                            ProcessNames(userCommand, customers);
+                            break;
+                        case "comments":
+                            ProcessComments(userCommand, customers);
+                            break;
+                        case "exit":
+                            run = false;
+                            break;
+
+                    }
 
                 }
                 catch (Exception ex)
@@ -33,53 +64,11 @@ namespace lab5
         }
 
 
-        private static bool ParseCommandLine(string[] userCommand, DataProcessor processor)
-        {
-            if (userCommand.Length < 1)
-            {
-                throw new ArgumentException($"Not enough command line arguments. Expected more than 1, got [{userCommand.Length}] ");
-            }
-            ValidateCommand(userCommand[0]);
-
-            switch (userCommand[0])
-            {
-                case "load":
-                    ProcessLoad(userCommand, processor);
-                    break;
-                case "print":
-                    ProcessPrint(userCommand, processor);
-                    break;
-                case "save":
-                    ProcessSave(userCommand, processor);
-                    break;
-                case "export":
-                    ProcessExport(userCommand, processor);
-                    break;
-                case "image":
-                    ProcessImage(userCommand, processor);
-                    break;
-                case "balances":
-                    ProcessBalances(userCommand, processor);
-                    break;
-                case "names":
-                    ProcessNames(userCommand, processor);
-                    break;
-                case "comments":
-                    ProcessComments(userCommand, processor);
-                    break;
-                case "exit":
-                    return false;
-
-            }
-            return true;
-
-        }
-
         private static void ValidateCommandLineLength(int currentLength, int expectedLength)
         {
             if (currentLength != expectedLength)
             {
-                throw new ArgumentException($"Not enough command line arguments. Expected [{expectedLength}], got [{currentLength}] ");
+                throw new ArgumentException($"The number of command line arguments is incorrect. Expected [{expectedLength}], got [{currentLength}] ");
             }
 
         }
@@ -119,9 +108,9 @@ namespace lab5
             return int.Parse(num);
         }
 
-        private static void CheckForData(Root root)
+        private static void CheckForData(List<Customer> customers)
         {
-            if (root != null)
+            if (customers.Count != 0)
             {
                 return;
             }
@@ -131,76 +120,80 @@ namespace lab5
 
 
 
-        private static void ProcessLoad(string[] userCommand, DataProcessor processor)
+        private static List<Customer> ProcessLoad(string[] userCommand)
         {
             ValidateCommandLineLength(userCommand.Length, 2);
             ValidateInputFile(userCommand[1]);
-            processor.root = Serializer.DoDeserialization(userCommand[1]);
+            List<Customer> customers = Serializer.DoDeserialization(userCommand[1]);
+            WriteLine("Downloaded.");
+            return customers;
         }
 
 
-        private static void ProcessPrint(string[] userCommand, DataProcessor processor)
+        private static void ProcessPrint(string[] userCommand, List<Customer> customers)
         {
             ValidateCommandLineLength(userCommand.Length, 2);
             int pageNum = ParseNumber(userCommand[1]);
-            CheckForData(processor.root);
-            int totalPages = processor.GetCountOfTotalPages();
+            CheckForData(customers);
+            int totalPages = DataProcessor.GetCountOfTotalPages(customers.Count);
             WriteLine($"Total number of pages:{totalPages}");
             if (totalPages < pageNum || pageNum < 1)
             {
                 throw new Exception($"Page number [{pageNum}] does not exist");
             }
-            List<Customer> customersFromPage = processor.GetPage(pageNum);
-            processor.Output(customersFromPage);
+            List<Customer> customersFromPage = DataProcessor.GetPage(pageNum, customers);
+            Output(customersFromPage);
 
         }
 
-        private static void ProcessSave(string[] userCommand, DataProcessor processor)
+        private static void ProcessSave(string[] userCommand, List<Customer> customers)
         {
             ValidateCommandLineLength(userCommand.Length, 2);
-            CheckForData(processor.root);
-            Serializer.DoSerialization(processor.root.customers, userCommand[1]);
+            CheckForData(customers);
+            Serializer.DoSerialization(customers, userCommand[1]);
+            WriteLine("Saved in: " + userCommand[1]);
         }
 
-        private static void ProcessExport(string[] userCommand, DataProcessor processor)
+        private static void ProcessExport(string[] userCommand, List<Customer> customers)
         {
             ValidateCommandLineLength(userCommand.Length, 3);
             int N = ParseNumber(userCommand[1]);
-            CheckForData(processor.root);
-            if (N < 1 || N > processor.root.customers.Count)
+            CheckForData(customers);
+            if (N < 1 || N > customers.Count)
             {
-                throw new Exception($"There is no such information about customers.The most information you can get is [{processor.root.customers.Count}]");
+                throw new Exception($"There is no such information about customers.The most information you can get is [{customers.Count}]");
             }
-            List<Customer> customersWithGreatestValue = processor.FindWithGreatestValue(N);
+            List<Customer> customersWithGreatestValue = DataProcessor.FindWithGreatestValue(N, customers);
             Serializer.DoSerialization(customersWithGreatestValue, userCommand[2]);
+            WriteLine("Exported in:" + userCommand[2]);
 
         }
-        private static void ProcessImage(string[] userCommand, DataProcessor processor)
+        private static void ProcessImage(string[] userCommand, List<Customer> customers)
         {
             ValidateCommandLineLength(userCommand.Length, 2);
-            CheckForData(processor.root);
-            Image image = new Image();
-            Image.MarketSegmentation segmentation = image.CountCustomersInCategory(processor.root.customers);
-            ScottPlot.Plot plt = image.FormBarGraph(segmentation);
+            CheckForData(customers);
+            Image.MarketSegmentation segmentation = Image.CountCustomersInCategory(customers);
+            ScottPlot.Plot plt = Image.FormBarGraph(segmentation);
             plt.SaveFig(userCommand[1]);
+            WriteLine("Image created");
 
         }
 
-        private static void ProcessBalances(string[] userCommand, DataProcessor processor)
+        private static void ProcessBalances(string[] userCommand, List<Customer> customers)
         {
             ValidateCommandLineLength(userCommand.Length, 1);
-            CheckForData(processor.root);
-            processor.DoSort(processor.root.customers);
-            processor.Output(processor.root.customers);
+            CheckForData(customers);
+            DataProcessor.DoSort(customers);
+            Output(customers);
 
         }
 
-        private static void ProcessNames(string[] userCommand, DataProcessor processor)
+        private static void ProcessNames(string[] userCommand, List<Customer> customers)
         {
             ValidateCommandLineLength(userCommand.Length, 2);
             int nationKey = ParseNumber(userCommand[1]);
-            CheckForData(processor.root);
-            List<string> names = processor.GetNamesList(nationKey);
+            CheckForData(customers);
+            List<string> names = DataProcessor.GetNamesList(nationKey, customers);
             if (names.Count == 0)
             {
                 WriteLine("There are no customers with such NATION KEY");
@@ -215,17 +208,37 @@ namespace lab5
             }
         }
 
-        private static void ProcessComments(string[] userCommand, DataProcessor processor)
+        private static void ProcessComments(string[] userCommand, List<Customer> customers)
         {
             ValidateCommandLineLength(userCommand.Length, 1);
-            CheckForData(processor.root);
-            List<string> comments = processor.GetCommentsList();
+            CheckForData(customers);
+            List<string> comments = DataProcessor.GetCommentsList(customers);
             for (int i = 0; i < comments.Count; i++)
             {
                 WriteLine($"{comments[i]}");
             }
 
         }
+
+        private static void Output(List<Customer> customers)
+        {
+            for (int i = 0; i < customers.Count; i++)
+            {
+                Customer customer = customers[i];
+                Console.WriteLine(
+                @$"C_CUSTKEY: {customer.customerKey}
+                C_NAME: {customer.name}
+                C_ADDRESS: {customer.address}
+                C_NATIONKEY: {customer.nationKey}
+                C_PHONE: {customer.phoneNumber}
+                C_ACCTBAL: {customer.accountBalanceRebate}
+                C_MKTSEGMENT: {customer.marketSegmentation}
+                C_COMMENT: {customer.comment}");
+                Console.WriteLine();
+            }
+
+        }
+
 
     }
 }

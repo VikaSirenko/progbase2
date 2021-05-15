@@ -3,57 +3,38 @@ using System.Collections.Generic;
 
 namespace lab5
 {
-    public class DataProcessor
+    public static class DataProcessor
     {
-        public Root root;
 
-        public int GetCountOfTotalPages()
+        public static int GetCountOfTotalPages(int costumersCount)
         {
             const int pageSize = 10;
-            int totalPages = (int)Math.Ceiling(this.root.customers.Count / (double)pageSize);
+            int totalPages = (int)Math.Ceiling(costumersCount / (double)pageSize);
             return totalPages;
         }
 
-        public List<Customer> GetPage(int pageNum)
+        public static List<Customer> GetPage(int pageNum, List<Customer> customers)
         {
             List<Customer> customersFromPage = new List<Customer>();
             const int pageSize = 10;
             int index = (pageNum - 1) * pageSize;
             for (int i = index; i < index + pageSize; i++)
             {
-                customersFromPage.Add(this.root.customers[i]);
+                customersFromPage.Add(customers[i]);
             }
 
             return customersFromPage;
         }
 
-        public void Output(List<Customer> customers)
-        {
-            for (int i = 0; i < customers.Count; i++)
-            {
-                Customer customer = customers[i];
-                Console.WriteLine(
-                @$"C_CUSTKEY: {customer.customerKey}
-                C_NAME: {customer.name}
-                C_ADDRESS: {customer.address}
-                C_NATIONKEY: {customer.nationKey}
-                C_PHONE: {customer.phoneNumber}
-                C_ACCTBAL: {customer.accountBalanceRebate}
-                C_MKTSEGMENT: {customer.marketSegmentation}
-                C_COMMENT: {customer.comment}");
-                Console.WriteLine();
-            }
 
-        }
-
-        public List<Customer> FindWithGreatestValue(int N)
+        public static List<Customer> FindWithGreatestValue(int N, List<Customer> customers)
         {
             List<Customer> sortedList = new List<Customer>();
-            for (int i = 0; i < this.root.customers.Count; i++)
+            for (int i = 0; i < customers.Count; i++)
             {
-                sortedList.Add(this.root.customers[i]);
+                sortedList.Add(customers[i]);
             }
-            sortedList = this.DoSort(sortedList);
+            sortedList = DoSort(sortedList);
             List<Customer> customersWithGreatestValue = new List<Customer>();
             for (int i = sortedList.Count - 1; i > sortedList.Count - N - 1; i--)
             {
@@ -62,19 +43,19 @@ namespace lab5
             return customersWithGreatestValue;
         }
 
-        public List<Customer> DoSort(List<Customer> customers)
+        public static List<Customer> DoSort(List<Customer> customers)
         {
             customers.Sort((x, y) => x.accountBalanceRebate.CompareTo(y.accountBalanceRebate));
             return customers;
 
         }
 
-        public List<string> GetNamesList(int nationKey)
+        public static List<string> GetNamesList(int nationKey, List<Customer> customers)
         {
             List<string> names = new List<string>();
-            for (int i = 0; i < this.root.customers.Count ; i++)
+            for (int i = 0; i < customers.Count; i++)
             {
-                Customer customer = this.root.customers[i];
+                Customer customer = customers[i];
                 if (customer.nationKey == nationKey)
                 {
                     names.Add(customer.name);
@@ -84,12 +65,12 @@ namespace lab5
             return names;
         }
 
-        public List<string> GetCommentsList()
+        public static List<string> GetCommentsList(List<Customer> customers)
         {
             List<string> comments = new List<string>();
-            for(int i=0; i<this.root.customers.Count; i++)
+            for (int i = 0; i < customers.Count; i++)
             {
-                Customer customer= this.root.customers[i];
+                Customer customer = customers[i];
                 comments.Add(customer.comment);
             }
             return comments;
